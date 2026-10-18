@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block Rush — Web launch #1 (16s)</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="fonts/lalezar.css">
+<style>
+  html,body{margin:0;background:#05060F;color:#F3EFE4;font:14px system-ui}
+  body{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px}
+  canvas{width:min(100%,405px);height:auto;border-radius:12px;display:block}
+  #bar{font:12px ui-monospace,Menlo,monospace;color:#A5A9C9}
+</style>
+</head>
+<body>
+<canvas id="v" width="1080" height="1920"></canvas>
+<div id="bar"></div>
+<script type="module">
+// Web launch ad #1 (2026-10-18): "Can you remember this?" refreshed for the website — Ice world planet, end card
+// "PLAY FREE · blockrushonline.com" (no download). Text only, game sounds, no music.
+// ?capture=1 renders 960 frames (60 fps) to the dev server, then python3 video-build/encode_web1.py [lang].
+// TikTok safe zone: keep text between y 180 and 1500 and away from the right 150px. Keep T in sync with the encoder.
+import { draw, HEX, islandLayout, N } from "./js/voxel.js";
+import { loadBuilds } from "./js/builds.js";
+document.documentElement.dataset.core = "ice";   // the game's arena center (Ice world), as in the app
+
+const W = 1080, H = 1920, FPS = 60, DUR = 16;
+const cv = document.getElementById("v"), ctx = cv.getContext("2d");
+const scene = Object.assign(document.createElement("canvas"), { width: 1080, height: 1080 });
+const C = { bg0: "#03040C", bg1: "#0E1030", ink: "#F3EFE4", muted: "#A5A9C9", accent: "#FFB23F", gold: "#F2C14E", good: "#5BD6A0", bad: "#FF6B6B", panel: "#23284D" };
+// Language: ?lang=ar swaps every text to Arabic (Lalezar font, whole-word animations, right-to-left).
+const LANG = new URLSearchParams(location.search).get("lang") || "en", AR = LANG === "ar";
+const L = (en, ar) => (AR ? ar : en);
+const isAr = s => /[\u0600-\u06FF]/.test(s);
+
+// ---------- math / easing ----------
+const cl = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const seg = (t, a, b) => cl((t - a) / (b - a));
+const lerp = (a, b, k) => a + (b - a) * k;
+const outExpo = k => k >= 1 ? 1 : 1 - 2 ** (-10 * k);
+const outBack = (k, s = 1.9) => 1 + (s + 1) * (k - 1) ** 3 + s * (k - 1) ** 2;
+const inOut = k => k < .5 ? 4 * k ** 3 : 1 - (-2 * k + 2) ** 3 / 2;
+const outBounce = k => { const n = 7.5625, d = 2.75;
+  if (k < 1 / d) return n * k * k; if (k < 2 / d) return n * (k -= 1.5 / d) * k + .75;
+  if (k < 2.5 / d) return n * (k -= 2.25 / d) * k + .9375; return n * (k -= 2.625 / d) * k + .984375; };
+const rng = seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16);
+  return `rgb(${Math.round((n >> 16) * f)},${Math.round((n >> 8 & 255) * f)},${Math.round((n & 255) * f)})`; };
+
+
+// ---------- timeline ----------
+const T = { hook: 0, gone: 3.3, build: 5.0, perfect: 9.4, surv: 10.9, end: 13.5 };   // 1-B "NOW BUILD IT" held 1.7s
+const END_AT = T.end;
+const CUTS = [T.surv, T.end];
+// ---------- background ----------
+const R0 = rng(7), STARS = Array.from({ length: 260 }, () => ({ x: R0(), y: R0(), r: R0() ** 3 * 3 + .6, a: .3 + R0() * .7, tw: R0() * 6.28, sp: .2 + R0() * .8 }));
+function background(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, C.bg0); g.addColorStop(.6, "#080A1C"); g.addColorStop(1, C.bg1);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  for (const [x0, y0, r, col, sp] of [[.2, .25, .6, "rgba(120,60,170,.28)", .012], [.85, .6, .55, "rgba(40,120,170,.22)", -.01], [.5, .95, .5, "rgba(255,178,63,.08)", .006]]) {
+    const cx = ((x0 + t * sp) % 1 + 1) % 1 * W, cy = y0 * H, n = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * W);
+    n.addColorStop(0, col); n.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = n; ctx.fillRect(0, 0, W, H);
+  }
+  for (const s of STARS) {
+    const x = ((s.x - t * .01 * s.sp) % 1 + 1) % 1 * W, y = s.y * H;
+    ctx.globalAlpha = s.a * (.65 + .35 * Math.sin(t * 3 + s.tw)); ctx.fillStyle = s.r > 2.4 ? "#FFE9C4" : "#DDE3FF";
+    ctx.beginPath(); ctx.arc(x, y, s.r, 0, 6.283); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ---------- 2D helpers ----------
+function isoCube(x, y, s, hex, a = 1) {   // flat-shaded iso cube sprite centered at x,y
+  ctx.globalAlpha = a;
+  const h = s / 2, q = s / 4;
+  const face = (pts, fill) => { ctx.beginPath(); pts.forEach(([px, py], i) => i ? ctx.lineTo(x + px, y + py) : ctx.moveTo(x + px, y + py)); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
+  face([[0, -h], [h, -q], [0, 0], [-h, -q]], hex);
+  face([[-h, -q], [0, 0], [0, h], [-h, q]], shade(hex, .72));
+  face([[0, 0], [h, -q], [h, q], [0, h]], shade(hex, .52));
+  ctx.globalAlpha = 1;
+}
+function text(str, x, y, px, { color = C.ink, align = "center", font = "Bungee", weight = 400, alpha = 1, spacing = 0, stroke = null } = {}) {
+  if (isAr(String(str))) { font = "Lalezar"; px *= 1.3; spacing = 0; }
+  ctx.save(); if (isAr(String(str))) ctx.direction = "rtl"; ctx.globalAlpha = alpha; ctx.font = `${weight} ${px}px ${font}`; ctx.textAlign = align; ctx.textBaseline = "middle";
+  if ("letterSpacing" in ctx) ctx.letterSpacing = `${spacing}px`;
+  if (stroke) { ctx.lineWidth = stroke[1]; ctx.strokeStyle = stroke[0]; ctx.lineJoin = "round"; ctx.strokeText(str, x, y); }
+  ctx.fillStyle = color; ctx.fillText(str, x, y); ctx.restore();
+}
+// Letters drop in one by one with overshoot, starting at time t0.
+function dropText(str, x, y, px, t, t0, { color = C.ink, stagger = .05, dur = .5, from = -120 } = {}) {
+  if (isAr(str)) { const k = seg(t, t0, t0 + dur + .1); if (k <= 0) return;
+    ctx.save(); ctx.translate(x, y + from * .4 * (1 - outBack(k))); const sc = lerp(1.5, 1, outExpo(k)); ctx.scale(sc, sc);
+    text(str, 0, 0, px, { color, alpha: cl(k * 3) }); ctx.restore(); return; }
+  ctx.save(); ctx.font = `400 ${px}px Bungee`;
+  const widths = [...str].map(ch => ctx.measureText(ch).width), total = widths.reduce((a, b) => a + b, 0);
+  let cx = x - total / 2;
+  [...str].forEach((ch, i) => {
+    const k = seg(t, t0 + i * stagger, t0 + i * stagger + dur);
+    if (k > 0) {
+      const e = outBack(k), sc = lerp(1.6, 1, outExpo(k));
+      ctx.save(); ctx.translate(cx + widths[i] / 2, y + from * (1 - e)); ctx.scale(sc, sc);
+      text(ch, 0, 0, px, { color, alpha: cl(k * 3) }); ctx.restore();
+    }
+    cx += widths[i];
+  });
+  ctx.restore();
+}
+// Horizontal mask reveal (a clean wipe) of a text line.
+function wipeText(str, x, y, px, k, opts = {}) {
+  if (k <= 0) return;
+  ctx.save(); ctx.font = `400 ${isAr(str) ? px * 1.3 : px}px ${isAr(str) ? "Lalezar" : "Bungee"}`;
+  if ("letterSpacing" in ctx) ctx.letterSpacing = `${isAr(str) ? 0 : opts.spacing || 0}px`;
+  const w = ctx.measureText(str).width + (opts.spacing || 0) * 2 + 120;
+  ctx.beginPath(); ctx.rect(x - w / 2, y - px, w * outExpo(k), px * 2); ctx.clip();
+  text(str, x + (1 - outExpo(k)) * -60, y, px, opts); ctx.restore();
+}
+function badge(n, label, t, t0) {   // "01  MEMORIZE" step header
+  const k = seg(t, t0, t0 + .55), e = outBack(k);
+  if (k <= 0) return;
+  const y = 250, x0 = 150;
+  ctx.save(); ctx.translate(x0, y); ctx.scale(e, e);
+  ctx.fillStyle = C.accent; ctx.beginPath(); ctx.arc(0, 0, 66, 0, 6.283); ctx.fill();
+  text(String(n).padStart(2, "0"), 0, 6, 58, { color: "#1B1400" });
+  ctx.restore();
+  const k2 = seg(t, t0 + .15, t0 + .7);
+  if (k2 > 0) {
+    ctx.save(); ctx.beginPath(); ctx.rect(x0 + 90, y - 100, 860 * outExpo(k2), 200); ctx.clip();
+    text(label, x0 + 95 + (1 - outExpo(k2)) * -60, y + 6, 104, { align: "left" }); ctx.restore();
+  }
+  // underline sweep
+  const u = outExpo(seg(t, t0 + .35, t0 + .9));
+  ctx.fillStyle = C.gold; ctx.fillRect(x0 + 95, y + 78, 700 * u, 10);
+}
+function caption(str, t, t0, y = 1760) {
+  const k = seg(t, t0, t0 + .45); if (k <= 0) return;
+  const e = outExpo(k);
+  ctx.save(); ctx.globalAlpha = e; ctx.translate(0, (1 - e) * 40);
+  ctx.font = "700 54px Outfit"; const w = ctx.measureText(str).width + 90;
+  ctx.fillStyle = "rgba(6,8,22,.78)"; ctx.strokeStyle = "rgba(242,193,78,.55)"; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.roundRect(540 - w / 2, y - 55, w, 110, 55); ctx.fill(); ctx.stroke();
+  text(str, 540, y + 2, 54, { font: "Outfit", weight: 700 });
+  ctx.restore();
+}
+function shockwave(x, y, k, maxR, col = "255,233,196") {
+  if (k <= 0 || k >= 1) return;
+  ctx.strokeStyle = `rgba(${col},${1 - k})`; ctx.lineWidth = 26 * (1 - k) + 2;
+  ctx.beginPath(); ctx.arc(x, y, maxR * outExpo(k), 0, 6.283); ctx.stroke();
+}
+function burst(x, y, t, t0, seed, n = 70, colors = ["F2C14E", "FF6B6B", "5BD6A0", "6EC3F0", "FF7FA8", "F3EFE4"]) {
+  const dt = t - t0; if (dt < 0 || dt > 2.4) return;
+  const r = rng(seed);
+  for (let i = 0; i < n; i++) {
+    const a = r() * 6.283, v = 600 + r() * 1400, spin = (r() - .5) * 14, sz = 14 + r() * 22, col = "#" + colors[i % colors.length];
+    const px = x + Math.cos(a) * v * dt * .55, py = y + Math.sin(a) * v * dt * .55 + 1300 * dt * dt;
+    ctx.save(); ctx.globalAlpha = cl(1.6 - dt); ctx.translate(px, py); ctx.rotate(spin * dt); ctx.fillStyle = col;
+    ctx.fillRect(-sz / 2, -sz / 4, sz, sz / 2); ctx.restore();
+  }
+}
+function wipe(t) {   // gold slanted band sweeping across at every cut
+  for (const c of CUTS) {
+    const k = seg(t, c - .28, c + .28); if (k <= 0 || k >= 1) continue;
+    const x = lerp(-1400, W + 400, inOut(k));
+    ctx.save(); ctx.translate(x, 0); ctx.transform(1, 0, -.35, 1, 0, 0);
+    ctx.fillStyle = C.gold; ctx.fillRect(0, -200, 520, H + 400);
+    ctx.fillStyle = "#FFE3A0"; ctx.fillRect(520, -200, 60, H + 400);
+    ctx.fillStyle = C.accent; ctx.fillRect(-90, -200, 50, H + 400);
+    ctx.restore();
+  }
+}
+
+// ---------- logo ----------
+const LOGO = new Image(); LOGO.src = "img/logo.png";
+const logoBuf = document.createElement("canvas");
+// Drops in with overshoot + a tilt settle; `shine` (0..1) sweeps a light band across the letters.
+function drawLogo(cx, cy, w, k, shine = 0) {
+  if (k <= 0 || !LOGO.naturalWidth) return;
+  const h = w * LOGO.naturalHeight / LOGO.naturalWidth;
+  if (logoBuf.width !== Math.ceil(w) || logoBuf.height !== Math.ceil(h)) { logoBuf.width = Math.ceil(w); logoBuf.height = Math.ceil(h); }
+  const b = logoBuf.getContext("2d"); b.globalCompositeOperation = "source-over"; b.clearRect(0, 0, w, h); b.drawImage(LOGO, 0, 0, w, h);
+  if (shine > 0 && shine < 1) {
+    const x = lerp(-w * .4, w * 1.4, inOut(shine)), g = b.createLinearGradient(x - 140, 0, x + 140, h * .3);
+    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(.5, "rgba(255,255,255,.75)"); g.addColorStop(1, "rgba(255,255,255,0)");
+    b.globalCompositeOperation = "source-atop"; b.fillStyle = g; b.fillRect(0, 0, w, h);
+  }
+  const e = outBack(k), sc = lerp(.35, 1, e), rot = lerp(-.14, 0, outExpo(k));
+  ctx.save(); ctx.globalAlpha = cl(k * 3); ctx.translate(cx, cy); ctx.rotate(rot); ctx.scale(sc, sc);
+  ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
+  ctx.drawImage(logoBuf, -w / 2, -h / 2); ctx.restore();
+}
+
+// ---------- island scene (game renderer) ----------
+let DUCK, ORDER, OTHERS, ARENA, THUMBS;
+function island(opts, x = 540, y = 1060, scale = 1, alpha = 1, [sw, sh] = [1080, 1080]) {
+  if (scene.width !== sw || scene.height !== sh) { scene.width = sw; scene.height = sh; }
+  scene.getContext("2d").clearRect(0, 0, sw, sh);
+  draw(scene, opts.vox, { transparent: true, ...opts });
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(scale, scale);
+  ctx.drawImage(scene, -sw / 2, -sh / 2); ctx.restore();
+}
+const deg = d => d * Math.PI / 180;
+// Mirrors draw()'s camera so 2D overlays (ripples, callouts) can point at world positions.
+function projector({ cam, zoom = 1, target = [N / 2, N / 2] }, cx = 540, cy = 1060, [sw, sh] = [1080, 1080]) {
+  const diag = N * Math.SQRT2, s = Math.min(sw / (diag + .4), sh / (Math.hypot(diag, 5) + .4)) * zoom;
+  const cy_ = Math.cos(cam.yaw), sy_ = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  const camDist = 30 / zoom, ox = sw / 2, oy = sh / 2 + (5 * s * cp) / 2;
+  return (x, y, z) => {
+    const dx = x - target[0], dy = y - target[1], u = dx * cy_ - dy * sy_, v = dx * sy_ + dy * cy_;
+    const f = camDist / Math.max(camDist - (v * cp + z * sp), 1);
+    return [cx - sw / 2 + ox + u * s * f, cy - sh / 2 + oy + (v * sp - z * cp) * s * f];
+  };
+}
+function ripple(x, y, k) {
+  if (k <= 0 || k >= 1) return;
+  ctx.save(); ctx.translate(x, y); ctx.scale(1, .5);
+  ctx.strokeStyle = `rgba(242,193,78,${1 - k})`; ctx.lineWidth = 8 * (1 - k) + 2;
+  ctx.beginPath(); ctx.arc(0, 0, 20 + 90 * outExpo(k), 0, 6.283); ctx.stroke(); ctx.restore();
+}
+function chip(label, x, y, k, tx, ty) {   // callout label with a leader line to (tx, ty)
+  if (k <= 0) return;
+  const e = outBack(k);
+  ctx.save(); ctx.globalAlpha = cl(k * 2);
+  ctx.strokeStyle = C.gold; ctx.lineWidth = 4; ctx.setLineDash([10, 8]);
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(lerp(x, tx, outExpo(k)), lerp(y, ty, outExpo(k))); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(tx, ty, 10 * e, 0, 6.283); ctx.fill();
+  ctx.translate(x, y); ctx.scale(e, e);
+  ctx.font = "400 46px Bungee"; const w = ctx.measureText(label).width + 56;
+  ctx.fillStyle = C.gold; ctx.beginPath(); ctx.roundRect(-w / 2, -40, w, 80, 40); ctx.fill();
+  text(label, 0, 4, 46, { color: "#1B1400" }); ctx.restore();
+}
+function paletteStrip(lt, cur, placedOf, y = 1560, pulse = 0) {
+  const cols = [...new Set(ORDER.map(o => o[3]))], total = k => ORDER.filter(o => o[3] === k).length;
+  const k0 = outBack(seg(lt, .2, .7));
+  cols.forEach((c, i) => {
+    const x = 540 + (i - (cols.length - 1) / 2) * 190, on = c === cur;
+    const bounce = on ? 1 + .08 * Math.sin(lt * 18) : 1;
+    ctx.save(); ctx.translate(x, y); ctx.scale(k0 * bounce, k0 * bounce);
+    ctx.fillStyle = on ? "rgba(242,193,78,.25)" : "rgba(46,52,98,.9)"; ctx.strokeStyle = on ? C.ink : "transparent"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.roundRect(-70, -70, 140, 140, 26); ctx.fill(); ctx.stroke();
+    isoCube(0, 4, 90, HEX[c]);
+    const left = total(c) - placedOf(c), bp = 1 + pulse * .25;
+    ctx.save(); ctx.translate(62, -62); ctx.scale(bp, bp);
+    ctx.fillStyle = pulse ? C.gold : C.ink; ctx.beginPath(); ctx.arc(0, 0, 34, 0, 6.283); ctx.fill();
+    text(String(left), 0, 2, 34, { color: "#171A33" }); ctx.restore();
+    ctx.restore();
+  });
+}
+const EMPTY = Array(N * N * 5).fill(null);
+
+
+// ---------- scenes ----------
+const PER = .17, BSTART = .35;   // build: one block every PER s
+// 0-3.3s: "CAN YOU REMEMBER THIS?" + the shape spinning + big 3-2-1. 3.3s: it vanishes, "NOW BUILD IT".
+function sceneHook(t) {
+  const show = seg(t, .05, .6), gone = seg(t, T.gone, T.gone + .35);
+  island({ vox: t < T.gone + .15 ? SHAPE : EMPTY, cam: { yaw: deg(30 + t * 55), pitch: deg(30) }, zoom: lerp(.6, .98, outExpo(show)) }, 540, 1000, 1, cl(show * 2));
+  if (t < T.gone) {
+    dropText(L("CAN YOU", "تقدر"), 540, 300, 110, t, .05, { stagger: .04, color: C.muted });
+    dropText(L("REMEMBER", "تحفظ"), 540, 440, 130, t, .25, { stagger: .04 });
+    dropText(L("THIS?", "هذا؟"), 540, 580, 150, t, .55, { stagger: .05, color: C.accent });
+    for (let i = 0; i < 3; i++) {   // 3 · 2 · 1
+      const k = seg(t, .9 + i * .8, .9 + i * .8 + .78); if (k <= 0 || k >= 1) continue;
+      ctx.save(); ctx.translate(540, 1690); const sc = lerp(2, .9, outExpo(k)); ctx.scale(sc, sc);
+      text(String(3 - i), 0, 0, 170, { color: C.ink, alpha: 1 - k * k, stroke: ["rgba(6,8,22,.8)", 16] }); ctx.restore();
+    }
+  } else {
+    if (gone < 1) { burst(540, 980, t, T.gone, 5, 60); ctx.fillStyle = `rgba(255,246,221,${.4 * (1 - gone)})`; ctx.fillRect(0, 0, W, H); }
+    dropText(L("NOW", "الحين"), 540, 380, 120, t, T.gone + .05, { stagger: .05, color: C.muted });
+    dropText(L("BUILD IT", "ابنِه!"), 540, 540, 160, t, T.gone + .2, { stagger: .05, color: C.accent });
+  }
+}
+// 4.1-8.5s: blocks drop in one by one, the score climbs to 100%.
+function sceneBuild(t) {
+  const lt = t - T.build, vox = EMPTY.slice(), drops = [], ripples = [];
+  const cam = { yaw: deg(40 + lt * 12), pitch: deg(32) }, zoom = 1.0, P = projector({ cam, zoom }, 540, 960);
+  let placed = 0;
+  ORDER.forEach(([x, y, z, key], i) => {
+    const t0 = BSTART + i * PER, k = seg(lt, t0, t0 + .22);
+    if (k >= 1) { vox[(z * N + y) * N + x] = key; placed++; }
+    else if (k > 0) drops.push({ x, y, z: z + 5 * (1 - outBounce(k)), key });
+    const pk = seg(lt, t0 + .18, t0 + .5);
+    if (pk > 0 && pk < 1) ripples.push([...P(x + .5, y + .5, z + 1), pk]);
+  });
+  island({ vox, drops, cam, zoom }, 540, 960);
+  for (const [rx, ry, rk] of ripples) ripple(rx, ry, rk);
+  const idx = Math.min(ORDER.length - 1, Math.max(0, Math.floor((lt - BSTART) / PER)));
+  paletteStrip(lt, lt > BSTART ? ORDER[idx][3] : null, c => ORDER.filter((o, j) => o[3] === c && seg(lt, BSTART + j * PER, BSTART + j * PER + .22) >= 1).length, 1560);
+  // live score
+  const pct = Math.round(100 * placed / ORDER.length), col = pct >= 100 ? C.good : pct > 60 ? C.gold : C.ink;
+  text(`${pct}%`, 540, 330, 170, { color: col, stroke: ["rgba(6,8,22,.8)", 16] });
+  wipeText(L("FROM MEMORY", "من الذاكرة"), 540, 470, 56, seg(lt, .1, .6), { color: C.muted, spacing: 6 });
+}
+// 8.5-10s: PERFECT!
+function scenePerfect(t) {
+  const lt = t - T.perfect;
+  island({ vox: SHAPE, cam: { yaw: deg(40 + (lt + 4.4) * 12), pitch: deg(32) }, zoom: 1.0 }, 540, 960);
+  ctx.save(); ctx.translate(540, 330); const pop = 1 + .15 * (1 - seg(lt, 0, .3)); ctx.scale(pop, pop);
+  text("100%", 0, 0, 170, { color: C.good, stroke: ["rgba(6,8,22,.8)", 16] }); ctx.restore();
+  const sk = seg(lt, .1, .45);
+  if (sk > 0) {
+    ctx.save(); ctx.translate(540, 1560); ctx.rotate(deg(-6)); const sc = lerp(2.6, 1, outBack(sk)); ctx.scale(sc, sc); ctx.globalAlpha = cl(sk * 3);
+    ctx.fillStyle = C.gold; ctx.beginPath(); ctx.roundRect(-330, -85, 660, 170, 30); ctx.fill();
+    text(L("PERFECT!", "مثالي!"), 0, 6, 110, { color: "#1B1400" }); ctx.restore();
+  }
+  shockwave(540, 1560, seg(lt, .35, 1.2), 620, "242,193,78");
+  burst(540, 1450, t, T.perfect + .35, 11);
+}
+// 10-12.6s: four islands, the shooting star hits the lowest score.
+function sceneSurvive(t) {
+  const lt = t - T.surv, n = 4, { offs, world } = islandLayout(n, 0);
+  const pull = inOut(seg(lt, 0, .8));
+  const target = [lerp(N / 2, world.center[0], pull), lerp(N / 2, world.center[1], pull)];
+  const LOSER = 1, hitAt = 1.5, hit = [offs[LOSER][0] + N / 2, offs[LOSER][1] + N / 2, 1];
+  const fx = {
+    star: lt >= .7 && lt < hitAt ? { to: hit, t: (lt - .7) / (hitAt - .7) } : null,
+    boom: lt >= hitAt && lt < hitAt + 1.1 ? { at: hit, t: (lt - hitAt) / 1.1 } : null,
+  };
+  island({ vox: SHAPE, cam: { yaw: deg(45 + lt * 10), pitch: deg(lerp(30, 50, pull)) }, zoom: lerp(1, .2, pull), target, world, fx, outline: true,
+    neighbours: offs.slice(1).map((off, i) => ({ vox: OTHERS[i], off, fall: i + 1 === LOSER ? cl((lt - hitAt) / 1.1) : 0 })) }, 540, 1010, 1, 1, [1080, 1920]);
+  dropText(L("LOWEST SCORE", "أقل نتيجة"), 540, 300, 96, t, T.surv + .1, { stagger: .03 });
+  dropText(L("IS OUT!", "تطلع!"), 540, 430, 130, t, T.surv + .35, { stagger: .04, color: C.bad });
+}
+// 12.6-15s: logo, play with friends, download.
+function sceneEnd(t) {
+  const lt = t - END_AT;
+  drawLogo(540, 760, 900, seg(lt, .0, .6), seg(lt, .8, 1.6));
+  const k = seg(lt, .55, 1.1);
+  if (k > 0) {   // just the link, plain
+    ctx.save(); ctx.globalAlpha = cl(k * 2); ctx.translate(0, (1 - outExpo(k)) * 30);
+    text("blockrushonline.com", 540, 1180, 84, { font: "Outfit", weight: 800, color: C.ink });
+    ctx.fillStyle = C.accent; ctx.fillRect(540 - 300 * outExpo(k), 1250, 600 * outExpo(k), 8);
+    ctx.restore();
+  }
+}
+function pill(label, x, y, k, col) {
+  if (k <= 0) return;
+  const e = outBack(k);
+  ctx.save(); ctx.globalAlpha = cl(k * 2); ctx.translate(x, y); ctx.scale(e, e);
+  ctx.font = isAr(label) ? "400 60px Lalezar" : "400 46px Bungee"; const w = ctx.measureText(label).width + 70;
+  ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(-w / 2, -44, w, 88, 44); ctx.fill();
+  text(label, 0, 4, 46, { color: "#10122A" }); ctx.restore();
+}
+
+// ---------- frame ----------
+function shakeAt(t) {
+  let s = 0;
+  for (const [t0, amp, d] of [[T.gone, 18, .3], [T.perfect + .35, 14, .3], [T.surv + 1.5, 34, .6], [T.end + .3, 14, .3]]) {
+    const k = seg(t, t0, t0 + d); if (k > 0 && k < 1) s += amp * (1 - k);
+  }
+  return [Math.sin(t * 91) * s, Math.cos(t * 77) * s];
+}
+function render(t) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, W, H);
+  background(t);
+  const [sx, sy] = shakeAt(t); ctx.translate(sx, sy);
+  if (t < T.build) sceneHook(t);
+  else if (t < T.perfect) sceneBuild(t);
+  else if (t < T.surv) scenePerfect(t);
+  else if (t < T.end) sceneSurvive(t);
+  else sceneEnd(t);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  wipe(t);
+  const v = ctx.createRadialGradient(540, 960, 500, 540, 960, 1250);
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,.45)"); ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+
+// ---------- boot ----------
+let SHAPE;
+await Promise.all([new Promise(ok => LOGO.complete && LOGO.naturalWidth ? ok() : (LOGO.onload = ok)), document.fonts.load("400 100px Bungee"), document.fonts.load("700 50px Outfit"), document.fonts.load("400 100px Lalezar", "تجربة")]);
+const builds = await loadBuilds();
+SHAPE = builds.get("parrot").vox;
+ORDER = [];
+for (let z = 0; z < 5; z++) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const k = SHAPE[(z * N + y) * N + x]; if (k) ORDER.push([x, y, z, k]); }
+const rs = rng(3);
+OTHERS = [.3, .9, .75].map(f => SHAPE.map(k => k && rs() < f ? k : null));
+window.renderAt = render;
+const bar = document.getElementById("bar"), params = new URLSearchParams(location.search);
+if (params.has("capture")) {
+  const total = DUR * FPS;
+  for (let i = 0; i < total; i++) {
+    render(i / FPS);
+    const blob = await new Promise(r => cv.toBlob(r, "image/jpeg", .93));
+    await fetch(`/__frame/${i}`, { method: "POST", body: blob });
+    if (i % 30 === 0) { bar.textContent = `capturing ${i}/${total}`; document.title = `capture ${i}/${total}`; }
+  }
+  bar.textContent = document.title = "capture done";
+} else if (params.has("t")) {
+  render(+params.get("t")); bar.textContent = `t = ${params.get("t")}s`;
+} else {
+  const t0 = performance.now();
+  const loop = now => { const t = ((now - t0) / 1000) % DUR; render(t); bar.textContent = `${t.toFixed(2)}s`; requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
