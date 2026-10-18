@@ -375,6 +375,10 @@ const LAYOUTS = ["card", "full", "stage", "hud"], LAYOUT_ZOOM = { card: 1, full:
 const backBtn = `<button class="chip ghost" id="back" aria-label="${t("back")}">←</button>`;
 const bindBack = () => { const b = app.querySelector("#back"); if (b) b.onclick = () => { location.hash = "#menu"; }; };
 
+// Website only: "Block Rush app · Coming soon on iOS" card (title screen + main menu).
+const soonCard = () => (webOpen ? `<div class="soon-ios" role="note"><img src="img/icon-192.png" alt="" width="46" height="46">
+  <span><b>${t("soonTitle")}</b><small>${t("soonLabel")}</small></span></div>` : "");
+
 // Website only (the apps have these in the store sheet): Privacy / Support / Contest rules links under the title screen,
 // plus a "Get it on iPhone" link once the App Store page is live (store_config.iosLive = true, editable on the server).
 function webFooter() {
@@ -395,6 +399,7 @@ function titleScreen() {
     <div class="title-controls">
       <input id="name" class="name-input" maxlength="16" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="words" placeholder="${t("yourName")}" aria-label="${t("yourName")}" value="${esc(store.get("br.name") || "")}">
       <button class="btn play-btn" id="play">${t("play")}</button>
+      ${soonCard()}
     </div>
     ${isApp() ? "" : webFooter()}
   </div>`;
@@ -422,8 +427,7 @@ function mainMenu() {
     <button class="btn wide big" id="chbtn">${t("menuChallenges")}</button>
     <button class="btn wide big" data-go="#howto">${t("menuHowTo")}</button>
     ${CONFIG.DESIGN_LAB ? `<button class="link" data-go="#lab">LAB · design options</button>` : ""}
-    ${webOpen ? `<div class="soon-ios" role="note"><img src="img/icon-192.png" alt="" width="46" height="46">
-      <span><b>${t("soonTitle")}</b><small>${t("soonLabel")}</small></span></div>` : ""}
+    ${soonCard()}
   </div>`;
   app.querySelectorAll("[data-go]").forEach(b => b.onclick = () => { location.hash = b.dataset.go; });
   app.querySelector("#back").onclick = () => { location.hash = ""; };   // back to the title screen
