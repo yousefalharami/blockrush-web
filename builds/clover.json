@@ -1,0 +1,15 @@
+{
+  "id": "clover",
+  "name": {
+    "en": "Four-leaf clover"
+  },
+  "layers": [
+    [
+      "LL.LL",
+      "LLLLL",
+      ".LLL.",
+      "LLLLL",
+      "LL.LL"
+    ]
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "leaf",
+  "name": {
+    "en": "Leaf"
+  },
+  "layers": [
+    [
+      "..L..",
+      ".LLL.",
+      "LLLLL",
+      ".LLL.",
+      "..C.."
+    ]
+  ]
+}

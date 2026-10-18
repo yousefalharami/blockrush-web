@@ -1,0 +1,22 @@
+{
+  "id": "race-car",
+  "name": {
+    "en": "Race car"
+  },
+  "layers": [
+    [
+      "NRRRN",
+      ".RRR.",
+      ".RRR.",
+      ".RRR.",
+      "NRRRN"
+    ],
+    [
+      ".RRR.",
+      ".....",
+      ".YNY.",
+      ".....",
+      "..W.."
+    ]
+  ]
+}

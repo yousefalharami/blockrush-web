@@ -1,0 +1,29 @@
+{
+  "id": "bus",
+  "name": {
+    "en": "Bus"
+  },
+  "layers": [
+    [
+      ".....",
+      "KYYKY",
+      "YYYYY",
+      "KYYKY",
+      "....."
+    ],
+    [
+      ".....",
+      "JJJJJ",
+      "YYYYY",
+      "JJJJJ",
+      "....."
+    ],
+    [
+      ".....",
+      "YYYYY",
+      "YYYYY",
+      "YYYYY",
+      "....."
+    ]
+  ]
+}

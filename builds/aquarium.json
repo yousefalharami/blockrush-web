@@ -1,0 +1,29 @@
+{
+  "id": "aquarium",
+  "name": {
+    "en": "Aquarium"
+  },
+  "layers": [
+    [
+      ".....",
+      "KKKKK",
+      "KKKKK",
+      "KKKKK",
+      "....."
+    ],
+    [
+      ".....",
+      "GGGGG",
+      "GGGGG",
+      "LOGGG",
+      "....."
+    ],
+    [
+      ".....",
+      "GGGGG",
+      "GGGGG",
+      "LGGOG",
+      "....."
+    ]
+  ]
+}

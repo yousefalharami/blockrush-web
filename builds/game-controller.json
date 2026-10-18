@@ -1,0 +1,22 @@
+{
+  "id": "game-controller",
+  "name": {
+    "en": "Game controller"
+  },
+  "layers": [
+    [
+      ".....",
+      "KKKKK",
+      "KKKKK",
+      "KKKKK",
+      "K...K"
+    ],
+    [
+      ".....",
+      ".N.R.",
+      ".N..Y",
+      ".N.G.",
+      "....."
+    ]
+  ]
+}

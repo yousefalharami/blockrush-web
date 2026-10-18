@@ -1,0 +1,22 @@
+{
+  "id": "cup-and-saucer",
+  "name": {
+    "en": "Cup and saucer"
+  },
+  "layers": [
+    [
+      "..W..",
+      ".WWW.",
+      "WWWWW",
+      ".WWW.",
+      "..W.."
+    ],
+    [
+      ".....",
+      "..W..",
+      ".WWWW",
+      "..W..",
+      "....."
+    ]
+  ]
+}

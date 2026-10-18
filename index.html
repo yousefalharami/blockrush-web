@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<script>
+  // Tablets (iPad): lay the page out at 740px wide and let iOS scale it up to fill the screen, so the game
+  // looks the same as on a phone, just bigger. (CSS zoom broke tap positions in WKWebView.)
+  (function () {
+    var short = Math.min(screen.width, screen.height);
+    if (short >= 700 && matchMedia("(pointer: coarse)").matches) {
+      document.querySelector('meta[name=viewport]').setAttribute("content", "width=740, viewport-fit=cover, user-scalable=no");
+    }
+  })();
+</script>
+<meta name="color-scheme" content="dark">
+<title>Block Rush — Memorize. Rebuild. Survive.</title>
+<meta name="description" content="A multiplayer memory game: see a 3D block shape, rebuild it from memory, and survive the shooting star. Play with friends online. Free daily games.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Block Rush — Memorize. Rebuild. Survive.">
+<meta property="og:description" content="See a 3D block shape, rebuild it from memory, and survive the shooting star. Play with friends online.">
+<meta property="og:image" content="img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#171A33">
+<link rel="preload" href="fonts/bungee-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Block Rush">
+</head>
+<body>
+<main class="wrap" id="app"></main>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

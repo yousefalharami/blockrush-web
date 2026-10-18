@@ -1,0 +1,29 @@
+{
+  "id": "pumpkin",
+  "name": {
+    "en": "Pumpkin"
+  },
+  "layers": [
+    [
+      ".OOO.",
+      "OOOOO",
+      "OOOOO",
+      "OOOOO",
+      ".OOO."
+    ],
+    [
+      ".OOO.",
+      "OOOOO",
+      "OOOOO",
+      "OOOOO",
+      ".KOK."
+    ],
+    [
+      ".....",
+      ".....",
+      "..C..",
+      ".....",
+      "....."
+    ]
+  ]
+}

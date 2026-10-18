@@ -1,0 +1,29 @@
+{
+  "id": "colosseum",
+  "name": {
+    "en": "Colosseum"
+  },
+  "layers": [
+    [
+      "MM.MM",
+      "M...M",
+      ".....",
+      "M...M",
+      "MM.MM"
+    ],
+    [
+      "MMMMM",
+      "M...M",
+      "M...M",
+      "M...M",
+      "MMMMM"
+    ],
+    [
+      "WWWWW",
+      "W....",
+      "W....",
+      "W....",
+      "WWW.W"
+    ]
+  ]
+}

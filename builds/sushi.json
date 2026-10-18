@@ -1,0 +1,29 @@
+{
+  "id": "sushi",
+  "name": {
+    "en": "Sushi"
+  },
+  "layers": [
+    [
+      ".....",
+      "WWNWW",
+      "WWWWW",
+      "WWNWW",
+      "....."
+    ],
+    [
+      ".....",
+      "WWNWW",
+      "WWWWW",
+      "WWNWW",
+      "....."
+    ],
+    [
+      ".....",
+      "OONOO",
+      "OONOO",
+      "OONOO",
+      "....."
+    ]
+  ]
+}

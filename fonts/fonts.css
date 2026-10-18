@@ -1,0 +1,3 @@
+/* Bundled fonts (Google Fonts, SIL Open Font License), Latin subset: Bungee 400, Outfit 400–700 (variable). */
+@font-face{font-family:"Bungee";font-style:normal;font-weight:400;font-display:swap;src:url(bungee-latin.woff2) format("woff2")}
+@font-face{font-family:"Outfit";font-style:normal;font-weight:400 700;font-display:swap;src:url(outfit-latin.woff2) format("woff2")}

@@ -1,0 +1,22 @@
+{
+  "id": "fried-egg",
+  "name": {
+    "en": "Fried egg"
+  },
+  "layers": [
+    [
+      ".WWW.",
+      "WWWWW",
+      "WWWWW",
+      "WWWWW",
+      ".WWW."
+    ],
+    [
+      ".....",
+      "..Y..",
+      ".YYY.",
+      "..Y..",
+      "....."
+    ]
+  ]
+}

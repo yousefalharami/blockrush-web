@@ -1,0 +1,29 @@
+{
+  "id": "greenhouse",
+  "name": {
+    "en": "Greenhouse"
+  },
+  "layers": [
+    [
+      ".....",
+      "WJJJW",
+      "JLLLJ",
+      "WJJJW",
+      "....."
+    ],
+    [
+      ".....",
+      "WJJJW",
+      "J...J",
+      "WJJJW",
+      "....."
+    ],
+    [
+      ".....",
+      "JJJJJ",
+      "WWWWW",
+      "JJJJJ",
+      "....."
+    ]
+  ]
+}

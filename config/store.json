@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "freePerDay": 2,
+  "banner": null,
+  "note": "",
+  "packs": [
+    {
+      "id": "games_5",
+      "productId": "com.blockrush.games5",
+      "type": "games",
+      "games": 5,
+      "title": "5 games",
+      "price": "$0.99",
+      "wasPrice": null,
+      "badge": null
+    },
+    {
+      "id": "games_15",
+      "productId": "com.blockrush.games15",
+      "type": "games",
+      "games": 15,
+      "title": "15 games",
+      "price": "$2.99",
+      "wasPrice": null,
+      "badge": null
+    },
+    {
+      "id": "unlimited",
+      "productId": "com.blockrush.unlimited.monthly",
+      "type": "subscription",
+      "period": "month",
+      "title": "Unlimited",
+      "price": "$3.99",
+      "wasPrice": null,
+      "badge": null
+    }
+  ],
+  "onlineBase": 0,
+  "minVersion": "1.0.0",
+  "latestVersion": "1.0.0",
+  "appStoreUrl": "itms-apps://apps.apple.com/app/id6817833615"
+}

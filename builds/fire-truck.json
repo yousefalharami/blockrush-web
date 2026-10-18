@@ -1,0 +1,29 @@
+{
+  "id": "fire-truck",
+  "name": {
+    "en": "Fire truck"
+  },
+  "layers": [
+    [
+      ".BBB.",
+      "NBBBN",
+      ".BBB.",
+      "NBBBN",
+      ".BBB."
+    ],
+    [
+      ".BBB.",
+      ".BBB.",
+      ".BBB.",
+      ".BBB.",
+      ".JJJ."
+    ],
+    [
+      "..W..",
+      "..W..",
+      "..W..",
+      "..W..",
+      "..Y.."
+    ]
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "id": "tree-stump",
+  "name": {
+    "en": "Tree stump"
+  },
+  "layers": [
+    [
+      "..C..",
+      ".CCC.",
+      "CCCCC",
+      ".CCC.",
+      "..C.."
+    ],
+    [
+      ".....",
+      ".CCC.",
+      ".CCC.",
+      ".CCC.",
+      "....."
+    ]
+  ]
+}

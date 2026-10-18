@@ -1,0 +1,29 @@
+{
+  "id": "treasure-chest",
+  "name": {
+    "en": "Treasure chest"
+  },
+  "layers": [
+    [
+      ".....",
+      "FFFFF",
+      "FFFFF",
+      "FFFFF",
+      "....."
+    ],
+    [
+      ".....",
+      "FFFFF",
+      "FFFFF",
+      "FFYFF",
+      "....."
+    ],
+    [
+      ".....",
+      ".FFF.",
+      ".FFF.",
+      ".FFF.",
+      "....."
+    ]
+  ]
+}
