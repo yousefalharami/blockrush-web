@@ -23,7 +23,9 @@ export const CONFIG = {
   MAX_PLAYERS: 16,
   AUTO_START_MS: 5_000, // online: a full room starts by itself after this countdown
   QUIZ_MS: 10_000, QUIZ_REVEAL_MS: 2_500, // lobby "Guess the shape": answer time, then the answer shows
-  ONLINE_ROOMS: [{ max: 10, min: 7 }], // online rooms: 10 players, Start unlocks at 7 (user, 2026-10-07; was 8/5 and 12/9)
+  // Online rooms: 10 players. Start unlocks at 7 in the apps (user, 2026-10-07) but at 3 on the website (launch period,
+  // user 2026-10-19 — few players online at once yet; raise it again later).
+  ONLINE_ROOMS: [{ max: 10, min: typeof window !== "undefined" && window.Capacitor?.isNativePlatform?.() ? 7 : 3 }],
   DESIGN_LAB: false,  // menu link to #lab (design picker). OFF for release (2026-10-07); #lab still opens by URL on the dev site
   HEARTBEAT_MS: 2_000,
   // Grace before someone counts as gone (answering a call / a quick text must not kick them). iPhone freezes the app
