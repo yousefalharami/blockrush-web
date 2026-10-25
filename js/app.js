@@ -164,10 +164,13 @@ function openStore(reason) {
     </div>
     ${cfg.note ? `<p class="hint small" id="store-note">${esc(cfg.note)}</p>` : ""}
     <p class="hint small" id="buy-msg" hidden></p>
-    <p class="hint small store-legal">${t("subTerms")}
-      <a href="${LEGAL.terms}" target="_blank" rel="noopener">${t("termsOfUse")}</a> · <a href="${LEGAL.privacy}" target="_blank" rel="noopener">${t("privacyPolicy")}</a></p>
-    <form class="promo" id="promo"><input id="promo-code" placeholder="${t("promoCode")}" autocomplete="off" autocapitalize="characters">
-      <button class="btn">${t("redeem")}</button></form>
+    <div class="sub-info">
+      <b>${t("subInfoTitle")}</b>
+      <p>${t("subInfoBody", { price: esc(priceOf("com.blockrush.unlimited.monthly") || (cfg.packs.find(p => p.type === "subscription") || {}).price || "") })}</p>
+      <p class="store-legal">${t("subTerms")}</p>
+      <div class="legal-links"><a class="legal-link" href="${LEGAL.privacy}" target="_blank" rel="noopener">${t("privacyPolicy")}</a>
+        <a class="legal-link" href="${LEGAL.terms}" target="_blank" rel="noopener">${t("termsOfUseEula")}</a></div>
+    </div>
     <p class="hint small" id="promo-msg" hidden></p>
     <button class="link restore" id="restore">${t("restore")}</button>
   </div>`;
@@ -188,17 +191,8 @@ function openStore(reason) {
     msg.style.color = r === true ? "var(--good)" : r === "offline" ? "var(--bad)" : "";
     if (r === true) play("perfect");
   };
-  el.querySelector("#promo").onsubmit = async e => {
-    e.preventDefault();
-    const btn = el.querySelector("#promo button"), msg = el.querySelector("#promo-msg");
-    btn.disabled = true;
-    const r = await redeem(el.querySelector("#promo-code").value);   // checked on the server
-    btn.disabled = false; msg.hidden = false;
-    msg.textContent = r.ok ? (r.kind === "games" ? t("promoGames", { n: r.games }) : t("promoOk"))
-      : t({ used: "promoUsed", offline: "promoOffline" }[r.reason] || "promoBad");
-    msg.style.color = r.ok ? "var(--good)" : "var(--bad)";
-    if (r.ok) { play("perfect"); setTimeout(close, 1200); }
-  };
+  // No promo-code box (App Review 3.1.1, 2026-10-25): only App Store purchases unlock games/Unlimited in the app.
+  // Giveaways use Apple Offer Codes (App Store Connect). The server's redeem_promo still exists but nothing calls it.
 }
 
 // In-game "leave the match?" sheet (game-styled, instead of the browser's confirm box).
@@ -806,7 +800,7 @@ function chRender(run) {
   if (memorize) run.builder.disable();
   app.querySelector("#chback").onclick = async () => {
     if (!(await confirmPop(t("chLeaveQ"), t("leaveMatch"), t("chLeaveTitle")))) return;
-    if (CH === run) { stopChallenge(); location.hash = "#menu"; }
+    if (CH === run) { stopChallenge(); if (location.hash === "#menu") home(); else location.hash = "#menu"; }   // already on #menu → no hashchange, so go home directly
   };
 }
 

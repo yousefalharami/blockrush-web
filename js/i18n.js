@@ -38,7 +38,7 @@ const STR = {
     buyFailed: "The purchase didn't go through. Please try again.", buyVerifyFailed: "We couldn't confirm the purchase yet. It will be checked again automatically.",
     buyGames: "+{n} games added!", buyDone: "Thanks! Your games were added.",
     subTerms: "Unlimited renews every month at the price shown until cancelled in your Apple account settings at least 24 hours before renewal. Payment is charged to your Apple account.",
-    termsOfUse: "Terms of Use", privacyPolicy: "Privacy Policy",
+    termsOfUse: "Terms of Use", privacyPolicy: "Privacy Policy", termsOfUseEula: "Terms of Use (EULA)", subInfoTitle: "Block Rush Unlimited (monthly subscription)", subInfoBody: "Unlimited games every day. 1 month for {price}, renews automatically each month.",
     playersOnline: "online", haveCode: "Have a room code?", openRooms: "Open rooms", noRooms: "No open rooms right now. Create one and others can join!",
     roomOf: "{name}'s room", roomPlaying: "Playing", roomFull: "Full", roomYours: "Yours",
     serverErr: "Couldn't reach the server. Try again.",
