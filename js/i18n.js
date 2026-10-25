@@ -101,7 +101,7 @@ const STR = {
     chWinTitle: "Challenge complete!", chWinDaily: "You won 1 free game!", chWinWeekly: "You won 5 free games!",
     chFailTitle: "Challenge over", chFail: "You got {n}% on shape {s}.", chFailTime: "Time ran out on shape {s}.",
     chAgainDay: "A new challenge comes tomorrow.", chAgainWeek: "A new challenge comes on Saturday.",
-    chLeaveTitle: "Leave the challenge?", chLeaveQ: "The timer keeps running while you're away. If it runs out, this try ends.", chOffline: "Challenges need an internet connection.",
+    chLeaveTitle: "Leave the challenge?", chLeaveQ: "If you leave now, this try ends and you can't play it again.", chOffline: "Challenges need an internet connection.",
     // Friends leaderboard
     lbEveryone: "Everyone", lbFriends: "Friends", myId: "Your ID", copy: "Copy", idCopied: "ID copied!",
     shareIdText: "Add me on Block Rush! My ID: {id}", friendIdPh: "Friend's ID (5 digits)", addFriend: "Send request",

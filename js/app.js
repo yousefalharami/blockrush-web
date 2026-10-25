@@ -800,7 +800,9 @@ function chRender(run) {
   if (memorize) run.builder.disable();
   app.querySelector("#chback").onclick = async () => {
     if (!(await confirmPop(t("chLeaveQ"), t("leaveMatch"), t("chLeaveTitle")))) return;
-    if (CH === run) { stopChallenge(); if (location.hash === "#menu") home(); else location.hash = "#menu"; }   // already on #menu → no hashchange, so go home directly
+    if (CH !== run) return;
+    rpc("challenge_forfeit", { p_kind: run.kind }).catch(() => {});   // leaving ends this try (counts as lost)
+    stopChallenge(); if (location.hash === "#menu") home(); else location.hash = "#menu";   // already on #menu → no hashchange, so go home directly
   };
 }
 
